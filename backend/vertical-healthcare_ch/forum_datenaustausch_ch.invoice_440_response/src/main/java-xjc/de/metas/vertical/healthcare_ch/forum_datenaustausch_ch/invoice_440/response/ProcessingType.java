@@ -1,0 +1,62 @@
+
+package de.metas.vertical.healthcare_ch.forum_datenaustausch_ch.invoice_440.response;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>Java class for processingType complex type.
+ * 
+ * <p>The following schema fragment specifies the expected content contained within this class.
+ * 
+ * <pre>
+ * &lt;complexType name="processingType"&gt;
+ *   &lt;complexContent&gt;
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *       &lt;sequence&gt;
+ *         &lt;element name="transport" type="{http://www.forum-datenaustausch.ch/invoice}transportType"/&gt;
+ *       &lt;/sequence&gt;
+ *     &lt;/restriction&gt;
+ *   &lt;/complexContent&gt;
+ * &lt;/complexType&gt;
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "processingType", propOrder = {
+    "transport"
+})
+public class ProcessingType {
+
+    @XmlElement(required = true)
+    protected TransportType transport;
+
+    /**
+     * Gets the value of the transport property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link TransportType }
+     *     
+     */
+    public TransportType getTransport() {
+        return transport;
+    }
+
+    /**
+     * Sets the value of the transport property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link TransportType }
+     *     
+     */
+    public void setTransport(TransportType value) {
+        this.transport = value;
+    }
+
+}

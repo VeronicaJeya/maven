@@ -1,0 +1,90 @@
+
+package de.metas.vertical.healthcare_ch.forum_datenaustausch_ch.invoice_440.request;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>Java class for guarantorAddressType complex type.
+ * 
+ * <p>The following schema fragment specifies the expected content contained within this class.
+ * 
+ * <pre>
+ * &lt;complexType name="guarantorAddressType"&gt;
+ *   &lt;complexContent&gt;
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *       &lt;choice&gt;
+ *         &lt;element name="company" type="{http://www.forum-datenaustausch.ch/invoice}companyType"/&gt;
+ *         &lt;element name="person" type="{http://www.forum-datenaustausch.ch/invoice}personType"/&gt;
+ *       &lt;/choice&gt;
+ *     &lt;/restriction&gt;
+ *   &lt;/complexContent&gt;
+ * &lt;/complexType&gt;
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "guarantorAddressType", namespace = "http://www.forum-datenaustausch.ch/invoice", propOrder = {
+    "company",
+    "person"
+})
+public class GuarantorAddressType {
+
+    @XmlElement(namespace = "http://www.forum-datenaustausch.ch/invoice")
+    protected CompanyType company;
+    @XmlElement(namespace = "http://www.forum-datenaustausch.ch/invoice")
+    protected PersonType person;
+
+    /**
+     * Gets the value of the company property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link CompanyType }
+     *     
+     */
+    public CompanyType getCompany() {
+        return company;
+    }
+
+    /**
+     * Sets the value of the company property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link CompanyType }
+     *     
+     */
+    public void setCompany(CompanyType value) {
+        this.company = value;
+    }
+
+    /**
+     * Gets the value of the person property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link PersonType }
+     *     
+     */
+    public PersonType getPerson() {
+        return person;
+    }
+
+    /**
+     * Sets the value of the person property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link PersonType }
+     *     
+     */
+    public void setPerson(PersonType value) {
+        this.person = value;
+    }
+
+}

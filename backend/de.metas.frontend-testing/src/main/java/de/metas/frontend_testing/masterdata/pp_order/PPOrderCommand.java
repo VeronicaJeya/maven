@@ -1,0 +1,116 @@
+package de.metas.frontend_testing.masterdata.pp_order;
+
+import de.metas.frontend_testing.masterdata.Identifier;
+import de.metas.frontend_testing.masterdata.MasterdataContext;
+import de.metas.organization.ClientAndOrgId;
+import de.metas.product.IProductBL;
+import de.metas.product.ProductId;
+import de.metas.quantity.Quantity;
+import de.metas.util.Services;
+import de.metas.util.StringUtils;
+import lombok.Builder;
+import lombok.NonNull;
+import org.adempiere.exceptions.AdempiereException;
+import org.adempiere.warehouse.WarehouseId;
+import org.eevolution.api.IPPOrderBL;
+import org.eevolution.api.PPOrderBOMLineId;
+import org.eevolution.api.PPOrderCreateRequest;
+import org.eevolution.api.PPOrderDocBaseType;
+import org.eevolution.api.PPOrderId;
+import org.eevolution.model.I_PP_Order;
+import org.eevolution.model.I_PP_Order_BOMLine;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+
+@Builder
+public class PPOrderCommand
+{
+	@NonNull private final IProductBL productBL = Services.get(IProductBL.class);
+	@NonNull private final IPPOrderBL ppOrderBL = Services.get(IPPOrderBL.class);
+
+	@NonNull MasterdataContext context;
+	@NonNull JsonPPOrderRequest request;
+	@NonNull Identifier identifier;
+
+	public JsonPPOrderResponse execute()
+	{
+		final ProductId productId = context.getId(request.getProduct(), ProductId.class);
+		final Quantity quantity = Quantity.of(request.getQty(), productBL.getStockUOM(productId));
+		final Instant datePromised = request.getDatePromised().toInstant();
+		final I_PP_Order ppOrder = ppOrderBL.createOrder(
+				PPOrderCreateRequest.builder()
+						.docBaseType(PPOrderDocBaseType.MANUFACTURING_ORDER)
+						.clientAndOrgId(ClientAndOrgId.ofClientAndOrg(MasterdataContext.CLIENT_ID, MasterdataContext.ORG_ID))
+						.plantId(MasterdataContext.DEFAULT_PLANT_ID)
+						.warehouseId(context.getId(request.getWarehouse(), WarehouseId.class))
+						.productId(productId)
+						.routingId(MasterdataContext.DEFAULT_ROUTING_ID)
+						.qtyRequired(quantity)
+						.dateOrdered(datePromised)
+						.datePromised(datePromised)
+						.dateStartSchedule(datePromised)
+						.completeDocument(true)
+						.build()
+		);
+
+		final PPOrderId ppOrderId = PPOrderId.ofRepoId(ppOrder.getPP_Order_ID());
+		context.putIdentifier(identifier, ppOrderId);
+		
+		checkBOMLines(ppOrderId);
+
+		return JsonPPOrderResponse.builder()
+				.documentNo(ppOrder.getDocumentNo())
+				.build();
+	}
+
+	private void checkBOMLines(final PPOrderId ppOrderId)
+	{
+		if (request.getLines() == null || request.getLines().isEmpty()) {return;}
+
+		final ArrayList<I_PP_Order_BOMLine> lines = new ArrayList<>(ppOrderBL.getOrderBOMLines(ppOrderId));
+		for (Map.Entry<String, JsonPPOrderRequest.Line> lineIdentifierAndRequest : request.getLines().entrySet())
+		{
+			final Identifier lineIdentifier = Identifier.ofString(lineIdentifierAndRequest.getKey());
+			final JsonPPOrderRequest.Line lineRequest = lineIdentifierAndRequest.getValue();
+
+			final I_PP_Order_BOMLine line = findAndRemoveMatchingBOMLine(lines, lineRequest);
+
+			assertExpectedPickingInstructionMatching(lineRequest, line);
+
+			context.putIdentifier(lineIdentifier, PPOrderBOMLineId.ofRepoId(line.getPP_Order_BOMLine_ID()));
+		}
+	}
+
+	private static void assertExpectedPickingInstructionMatching(final JsonPPOrderRequest.Line lineRequest, final I_PP_Order_BOMLine line)
+	{
+		if (lineRequest.getExpectedPickingInstruction() == null) {return;}
+
+		final String expectedPickingInstruction = StringUtils.trimBlankToNull(lineRequest.getExpectedPickingInstruction());
+		final String actualPickingInstruction = StringUtils.trimBlankToNull(line.getPickingInstruction());
+		if (!Objects.equals(actualPickingInstruction, expectedPickingInstruction))
+		{
+			throw new AdempiereException("PickingInstruction not matching")
+					.setParameter("expected", lineRequest.getExpectedPickingInstruction())
+					.setParameter("actual", line.getPickingInstruction())
+					.setParameter("line", line)
+					.setParameter("lineRequest", lineRequest);
+		}
+	}
+
+	private I_PP_Order_BOMLine findAndRemoveMatchingBOMLine(
+			@NonNull final ArrayList<I_PP_Order_BOMLine> lines,
+			@NonNull final JsonPPOrderRequest.Line lineRequest)
+	{
+		final ProductId lineProductId = context.getId(lineRequest.getProduct(), ProductId.class);
+
+		final I_PP_Order_BOMLine line = lines.stream()
+				.filter(l -> l.getM_Product_ID() == lineProductId.getRepoId())
+				.findFirst()
+				.orElseThrow(() -> new AdempiereException("No BOM lines found for " + lineProductId + " in " + lines));
+		lines.remove(line);
+		return line;
+	}
+}
